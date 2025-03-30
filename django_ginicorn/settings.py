@@ -138,7 +138,7 @@ LOGGING = {
             "level": "INFO",
             "class": "utils.custom_log_handler.DailyConcurrentRotatingFileHandler",
             "filename": "logs/gunicorn",
-            "backupCount": 7,  # Giữ lại 7 file log gần nhất
+            "backupCount": 2,  # Giữ lại 7 file log gần nhất
             "formatter": "verbose",
         },
         "console": {
@@ -151,17 +151,17 @@ LOGGING = {
         "django": {
             "level": "INFO",
             "handlers": ["console", "gunicorn"],
-            "propagate": True,
+            "propagate": False,
         },
         "gunicorn.error": {
             "level": "INFO",
             "handlers": ["gunicorn"],
-            "propagate": True,
+            "propagate": False,
         },
         "gunicorn.access": {
             "level": "INFO",
             "handlers": ["gunicorn"],
-            "propagate": True,
+            "propagate": False,
         },
     },
 }
