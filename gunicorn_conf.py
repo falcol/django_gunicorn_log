@@ -1,5 +1,6 @@
 # gunicorn --workers 4 --access-logfile - --access-logformat="%(h)s %(l)s %(u)s %(t)s '%(r)s' %(s)s %(b)s" --error-logfile - django_ginicorn.wsgi:application
 # cmd: gunicorn django_ginicorn.wsgi:application --config gunicorn_conf.py
+# gunicorn  -c gunicorn_conf.py django_ginicorn.wsgi:application
 
 workers = 4
 accesslog = '-'

@@ -129,7 +129,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {pathname}:{lineno:d} {message}",
+            "format": "[{asctime}] [{levelname}] [PID={process}] [Thread={thread}] {pathname}:{lineno} - {message}",
             "style": "{",
         },
     },
