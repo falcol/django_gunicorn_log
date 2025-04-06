@@ -9,13 +9,15 @@ from django_q.tasks import schedule
 
 from .models import Lock  # Import model Lock
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("django")
 LOCK_NAME = 'django_q_cluster_lock'
 
 def remove_lock():
     try:
         lock = Lock.objects.get(lock_name=LOCK_NAME)
-        lock.lock_status = False
+        lock.is_lock = False
+        lock.locked_by_pid = None
+        lock.lock_at = None
         lock.save()
         logger.info("🧹 Removed database lock.")
     except Lock.DoesNotExist:
@@ -29,12 +31,14 @@ def start_django_q_cluster():
 
     # Kiểm tra nếu lock đã tồn tại và đang được giữ
     lock, created = Lock.objects.get_or_create(lock_name=LOCK_NAME)
-    if lock.lock_status:
+    if lock.is_lock:
         logger.info("🔁 Django Q already running (lock is active).")
         return
 
     # Đặt lock trong DB
-    lock.lock_status = True
+    lock.is_lock = True
+    lock.lock_at = now()
+    lock.locked_by_pid = os.getpid()
     lock.save()
 
     # Đăng ký hàm xoá lock khi process kết thúc
