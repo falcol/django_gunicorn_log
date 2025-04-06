@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_q',
     "check_log"
 ]
 
@@ -164,4 +165,14 @@ LOGGING = {
             "propagate": False,
         },
     },
+}
+
+Q_CLUSTER = {
+    'name': 'mycluster',
+    'workers': 2,
+    'timeout': 60,
+    'retry': 120,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',
 }
