@@ -10,8 +10,8 @@ class CheckLogConfig(AppConfig):
     name = 'check_log'
 
     def ready(self):
-        # from .q_cluster_starter import start_django_q_cluster
-        # start_django_q_cluster()
+        from .q_cluster_starter import start_django_q_cluster
+        start_django_q_cluster()
 
-        from .aps_runner import start_scheduler
-        start_scheduler()
+        # from .aps_runner import start_scheduler
+        # start_scheduler()
