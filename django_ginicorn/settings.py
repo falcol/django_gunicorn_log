@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django_q', # not used in django 5.0
+    'django_q', # not used in django 5.0
     "check_log"
 ]
 

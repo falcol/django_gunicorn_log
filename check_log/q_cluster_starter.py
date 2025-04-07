@@ -1,16 +1,19 @@
 import atexit
 import logging
 import os
+import threading
 
 from django.utils.timezone import now
 from django_q.cluster import Cluster, Process
 from django_q.models import Schedule
 from django_q.tasks import schedule
 
-from .models import Lock  # Import model Lock
+from .models import Lock
 
 logger = logging.getLogger("django")
 LOCK_NAME = 'django_q_cluster_lock'
+_cluster_started = threading.Lock()
+_has_started = False
 
 def remove_lock():
     try:
@@ -24,42 +27,38 @@ def remove_lock():
         logger.warning("Lock not found in database.")
 
 def update_lock(lock: Lock):
-    # Cập nhật lock trong DB
     lock.is_lock = True
     lock.lock_at = now()
     lock.locked_by_pid = os.getpid()
     lock.save()
-
-    # Đăng ký hàm xoá lock khi process kết thúc
     atexit.register(remove_lock)
 
-def start_django_q_cluster():
-    # Nếu đã khởi động rồi thì không chạy nữa
-    if hasattr(start_django_q_cluster, "_started"):
-        return
-    start_django_q_cluster._started = True
+def start_django_q_cluster_once(sender=None, **kwargs):
+    global _has_started
+    with _cluster_started:
+        if _has_started:
+            return
+        _has_started = True
 
-    # Kiểm tra nếu lock đã tồn tại và đang được giữ
-    lock, created = Lock.objects.get_or_create(lock_name=LOCK_NAME)
-    if lock.is_lock:
-        logger.info("🔁 Django Q already running (lock is active).")
-        return
+        # Phần còn lại giữ nguyên
+        lock, _ = Lock.objects.get_or_create(lock_name=LOCK_NAME)
+        if lock.is_lock:
+            logger.info("🔁 Django Q already running (lock is active).")
+            return
 
-    update_lock(lock)
+        update_lock(lock)
 
-    # Start the cluster in a separate process
-    p = Process(target=Cluster().start)
-    p.start()
+        p = Process(target=Cluster().start)
+        p.start()
 
-    # Schedule task if not already scheduled
-    if not Schedule.objects.filter(name='log_time_task').exists():
-        schedule(
-            'check_log.tasks.log_time',
-            name='log_time_task',
-            schedule_type=Schedule.CRON,
-            cron='*/1 * * * *',  # mỗi phút
-            repeats=-1,
-            next_run=now()
-        )
+        if not Schedule.objects.filter(name='log_time_task').exists():
+            schedule(
+                'check_log.tasks.log_time',
+                name='log_time_task',
+                schedule_type=Schedule.CRON,
+                cron='*/1 * * * *',
+                repeats=-1,
+                next_run=now()
+            )
 
-    logger.info("✅ Django Q started by process PID %s", os.getpid())
+        logger.info("✅ Django Q started by process PID %s", os.getpid())
