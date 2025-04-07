@@ -9,4 +9,4 @@ class Lock(models.Model):
     lock_updated_at = models.DateTimeField(auto_now=True)  # Thời gian cập nhật lock
 
     def __str__(self):
-        return f"{self.lock_name} - {'Locked' if self.lock_status else 'Unlocked'}"
+        return f"{self.lock_name} - {'Locked' if self.is_lock else 'Unlocked'}"

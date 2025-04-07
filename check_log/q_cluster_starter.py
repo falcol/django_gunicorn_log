@@ -23,6 +23,16 @@ def remove_lock():
     except Lock.DoesNotExist:
         logger.warning("Lock not found in database.")
 
+def update_lock(lock: Lock):
+    # Cập nhật lock trong DB
+    lock.is_lock = True
+    lock.lock_at = now()
+    lock.locked_by_pid = os.getpid()
+    lock.save()
+
+    # Đăng ký hàm xoá lock khi process kết thúc
+    atexit.register(remove_lock)
+
 def start_django_q_cluster():
     # Nếu đã khởi động rồi thì không chạy nữa
     if hasattr(start_django_q_cluster, "_started"):
@@ -35,14 +45,7 @@ def start_django_q_cluster():
         logger.info("🔁 Django Q already running (lock is active).")
         return
 
-    # Đặt lock trong DB
-    lock.is_lock = True
-    lock.lock_at = now()
-    lock.locked_by_pid = os.getpid()
-    lock.save()
-
-    # Đăng ký hàm xoá lock khi process kết thúc
-    atexit.register(remove_lock)
+    update_lock(lock)
 
     # Start the cluster in a separate process
     p = Process(target=Cluster().start)
