@@ -1,10 +1,13 @@
 import atexit
 import logging
 import os
+import threading
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from django.core.signals import request_started
 from django.db import transaction
+from django.dispatch import receiver
 from django.utils.timezone import now
 
 from .models import Lock
@@ -13,6 +16,10 @@ from .tasks import log_time
 logger = logging.getLogger("django")
 LOCK_NAME = "apscheduler_lock"
 scheduler = BackgroundScheduler()
+
+# Global variables to ensure the scheduler starts only once
+_scheduler_started = threading.Lock()
+_has_started = False
 
 def remove_lock():
     """
@@ -72,3 +79,19 @@ def start_scheduler():
     )
     scheduler.start()
     logger.info(f"✅ APScheduler started by process PID {os.getpid()}")
+
+# Use the request_started signal to trigger the scheduler startup
+@receiver(request_started)
+def start_scheduler_on_request(sender, **kwargs):
+    """
+    Start the scheduler when the first request is received.
+    """
+    global _has_started
+    with _scheduler_started:
+        if _has_started:
+            # logger.info("🔁 Scheduler already started, skipping.")
+            return
+        _has_started = True
+
+        logger.info("🌟 Request received, attempting to start APScheduler.")
+        start_scheduler()
