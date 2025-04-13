@@ -1,13 +1,14 @@
 #!/bin/bash
 #/home/falcol/django_gunicorn/deploy.sh
 # Đường dẫn gốc của project
-PROJECT_DIR="/home/falcol/django_gunicorn"  # Đổi nếu khác
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
 DJANGO_MODULE="django_gunicorn"  # Đổi nếu khác
 GUNICORN_CONF="$PROJECT_DIR/gunicorn_conf.py"
 DOMAIN="localhost"  # Đổi nếu dùng domain
 USER="falcol"
 
+echo "🚀 Deploying project from: $PROJECT_DIR"
 echo "🔁 Updating source code..."
 cd "$PROJECT_DIR" || exit
 git pull
