@@ -1,0 +1,15 @@
+server {
+    listen 8000;
+    server_name __DOMAIN__;
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+
+    location /static/ {
+        alias __PROJECT_DIR__/staticfiles/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:__PROJECT_DIR__/gunicorn.sock;
+    }
+}

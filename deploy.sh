@@ -1,4 +1,5 @@
 #!/bin/bash
+# chmod +x deploy.sh
 #/home/falcol/django_gunicorn/deploy.sh
 # Đường dẫn gốc của project
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -28,24 +29,24 @@ rm -rf $PROJECT_DIR/staticfiles/*  # Xóa tất cả file static cũ
 echo "🎨 Collecting static files..."
 # python manage.py collectstatic --noinput
 
-echo "🛠️ Creating Gunicorn systemd service..."
+echo "🛠️ Rendering Gunicorn systemd service..."
 
+SERVICE_TEMPLATE="$PROJECT_DIR/template.gunicorn.service"
+SERVICE_RENDERED="/tmp/gunicorn_rendered.service"
 SERVICE_FILE="/etc/systemd/system/gunicorn.service"
 
-sudo bash -c "cat > $SERVICE_FILE" <<EOL
-[Unit]
-Description=gunicorn daemon for Django project
-After=network.target
+sudo systemctl unmask gunicorn.service
 
-[Service]
-User=$USER
-Group=www-data
-WorkingDirectory=$PROJECT_DIR
-ExecStart=$VENV_DIR/bin/gunicorn -c $GUNICORN_CONF $DJANGO_MODULE.wsgi:application
+sed \
+    -e "s|__USER__|$USER|g" \
+    -e "s|__PROJECT_DIR__|$PROJECT_DIR|g" \
+    -e "s|__VENV_DIR__|$VENV_DIR|g" \
+    -e "s|__GUNICORN_CONF__|$GUNICORN_CONF|g" \
+    -e "s|__DJANGO_MODULE__|$DJANGO_MODULE|g" \
+    "$SERVICE_TEMPLATE" > "$SERVICE_RENDERED"
 
-[Install]
-WantedBy=multi-user.target
-EOL
+sudo cp "$SERVICE_RENDERED" "$SERVICE_FILE"
+
 
 echo "🧹 Checking and removing old gunicorn socket if exists..."
 SOCKET_FILE="$PROJECT_DIR/gunicorn.sock"
@@ -64,32 +65,22 @@ sudo systemctl restart gunicorn
 
 echo "🌐 Setting up Nginx..."
 
-NGINX_CONF="/etc/nginx/sites-available/django_project"
+TEMPLATE_FILE="$PROJECT_DIR/template.nginx"
+TEMP_NGINX_CONF="/tmp/nginx_rendered.conf"
+FINAL_NGINX_CONF="/etc/nginx/sites-available/django_project"
 
-sudo bash -c "cat > $NGINX_CONF" <<EOL
-server {
-    listen 9000;
-    server_name $DOMAIN;
+# Replace placeholders in the template
+sed "s|__PROJECT_DIR__|$PROJECT_DIR|g; s|__DOMAIN__|$DOMAIN|g" "$TEMPLATE_FILE" > "$TEMP_NGINX_CONF"
 
-    location = /favicon.ico { access_log off; log_not_found off; }
-
-    location /static/ {
-        alias $PROJECT_DIR/staticfiles/;
-    }
-
-    location / {
-        include proxy_params;
-        proxy_pass http://unix:$PROJECT_DIR/gunicorn.sock;
-    }
-}
-EOL
-
-sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/
+# Copy to Nginx and create symlink
+sudo cp "$TEMP_NGINX_CONF" "$FINAL_NGINX_CONF"
+sudo ln -sf "$FINAL_NGINX_CONF" /etc/nginx/sites-enabled/
 
 echo "✅ Testing nginx config..."
 sudo nginx -t
 
 echo "🔁 Restarting nginx..."
 sudo systemctl restart nginx
+echo "🔄 Reloading Nginx..."
 
 echo "🎉 Deployment complete!"
