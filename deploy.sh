@@ -14,6 +14,18 @@ echo "🔁 Updating source code..."
 cd "$PROJECT_DIR" || exit
 git pull
 
+if [ ! -d "$VENV_DIR" ]; then
+    echo "🐍 Virtual environment not found. Creating one..."
+    python3 -m venv "$VENV_DIR"
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to create virtual environment. Exiting."
+        exit 1
+    fi
+    echo "✅ Virtual environment created successfully."
+else
+    echo "✅ Virtual environment already exists."
+fi
+
 echo "🐍 Activating virtualenv..."
 source "$VENV_DIR/bin/activate"
 
