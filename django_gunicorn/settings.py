@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # 'django_q', # not used in django 5.0
-    "check_log"
+    "check_log",
+    "base_models",
+    "model_proxy",
 ]
 
 MIDDLEWARE = [
@@ -124,6 +126,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+AUTH_USER_MODEL = 'base_models.CustomUser'
 
 LOGGING = {
     "version": 1,
