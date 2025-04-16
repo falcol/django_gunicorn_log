@@ -1,9 +1,17 @@
 
+from django.db import models
+
 from base_models.models import CustomUser, Product
 
 
+class UserManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True)
+
 # Create proxy models for CustomUser and Product
 class CustomUserProxy(CustomUser):
+
+    objects = UserManager()  # Use the custom manager
     class Meta:
         proxy = True
         verbose_name = "Custom User Proxy"

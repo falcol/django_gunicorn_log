@@ -179,3 +179,7 @@ Q_CLUSTER = {
     'bulk': 10,
     'orm': 'default',
 }
+
+MIGRATE_MODULES = {
+    'model_proxy': None,  # Disable migrations for this app
+}
