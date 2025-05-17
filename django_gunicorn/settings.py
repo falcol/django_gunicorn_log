@@ -131,6 +131,12 @@ AUTH_USER_MODEL = 'base_models.CustomUser'
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "ignore_venv_logs": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: "site-packages" not in record.pathname,
+        },
+    },
     "formatters": {
         "verbose": {
             "format": "[{asctime}] [{levelname}] [PID={process}] [Thread={thread}] {pathname}:{lineno} - {message}",
@@ -142,7 +148,7 @@ LOGGING = {
             "level": "INFO",
             "class": "utils.custom_log_handler.DailyConcurrentRotatingFileHandler",
             "filename": "logs/gunicorn",
-            "backupCount": 2,  # Giữ lại 7 file log gần nhất
+            "backupCount": 2,
             "formatter": "verbose",
         },
         "console": {
@@ -150,11 +156,25 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        "rich": {
+            "class": "rich.logging.RichHandler",
+            "level": "DEBUG",
+            "rich_tracebacks": True,
+            "show_time": True,
+            "show_level": True,
+            "show_path": True,
+            "markup": True,
+            "filters": ["ignore_venv_logs"],  # <-- thêm filter để bỏ log ngoài project
+        },
+    },
+    "root": {
+        "handlers": ["rich"] if DEBUG else ["console"],
+        "level": "DEBUG",
     },
     "loggers": {
         "django": {
             "level": "INFO",
-            "handlers": ["console", "gunicorn"],
+            "handlers": [ "gunicorn", "rich"],
             "propagate": False,
         },
         "gunicorn.error": {
@@ -169,6 +189,8 @@ LOGGING = {
         },
     },
 }
+
+
 
 Q_CLUSTER = {
     'name': 'mycluster',
