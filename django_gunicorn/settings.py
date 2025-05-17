@@ -138,6 +138,18 @@ LOGGING = {
         },
     },
     "formatters": {
+        "color": {
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(log_color)s[%(asctime)s] [%(levelname)s] %(pathname)s:%(lineno)d - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "log_colors": {
+                'DEBUG': 'cyan',
+                'INFO': 'green',
+                'WARNING': 'yellow',
+                'ERROR': 'red',
+                'CRITICAL': 'red,bg_white',
+            },
+        },
         "verbose": {
             "format": "[{asctime}] [{levelname}] [PID={process}] [Thread={thread}] {pathname}:{lineno} - {message}",
             "style": "{",
@@ -154,27 +166,19 @@ LOGGING = {
         "console": {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-        "rich": {
-            "class": "rich.logging.RichHandler",
-            "level": "DEBUG",
-            "rich_tracebacks": True,
-            "show_time": True,
-            "show_level": True,
-            "show_path": True,
-            "markup": True,
-            "filters": ["ignore_venv_logs"],  # <-- thêm filter để bỏ log ngoài project
+            # Chỉ dùng colorlog khi DEBUG=True, nếu không thì dùng formatter verbose (không màu)
+            "formatter": "color" if DEBUG else "verbose",
+            "filters": ["ignore_venv_logs"],
         },
     },
     "root": {
-        "handlers": ["rich"] if DEBUG else ["console"],
-        "level": "DEBUG",
+        "handlers": ["console"] if DEBUG else ["gunicorn"],
+        "level": "DEBUG" if DEBUG else "INFO",
     },
     "loggers": {
         "django": {
             "level": "INFO",
-            "handlers": [ "gunicorn", "rich"],
+            "handlers": ["gunicorn", "console"] if DEBUG else ["gunicorn"],
             "propagate": False,
         },
         "gunicorn.error": {
@@ -189,7 +193,6 @@ LOGGING = {
         },
     },
 }
-
 
 
 Q_CLUSTER = {
